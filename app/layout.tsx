@@ -1,6 +1,16 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Helix } from "ldrs/react";
+import "ldrs/react/Helix.css";
+import { ThemeProvider } from "@/components/ui/theme-provider";
+import Provider from "./provider";
+
+import Settings from "./settings";
+import Footer from "./footer";
+import ZoomAnimation from "./zoom-animation";
+import { usePlayStore } from "@/store/play-animation";
+import SideBar from "./sidebar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,15 +29,24 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
+  modal,
 }: Readonly<{
   children: React.ReactNode;
+  modal: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <Provider>
+          <ZoomAnimation>
+            <SideBar />
+            {children}
+            <Footer />
+          </ZoomAnimation>
+          {modal}
+        </Provider>
       </body>
     </html>
   );

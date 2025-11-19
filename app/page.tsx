@@ -1,65 +1,151 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import LandingPage from "./landing-components/landing-page";
+import ReusableSwiper from "./reusable-display";
+
+import SearchResult from "./search-components/search-results";
+
+import { useSearchParams } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
+import { ScrollToTop } from "@/components/ui/scroll-to-top";
+import { usePlayStore } from "@/store/play-animation";
+export default function MovieWebsite() {
+  const searchParams = useSearchParams();
+  const query = searchParams.get("query");
+  const isSearching = Boolean(query);
+  const { play } = usePlayStore();
+
+  console.log(play);
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <>
+      <LandingPage />
+
+      <AnimatePresence mode="wait">
+        {isSearching ? (
+          <motion.div
+            key="search"
+            initial={{ opacity: 0 }}
+            animate={{
+              opacity: 1,
+              transition: {
+                delay: 0.3,
+                duration: 0.3,
+                ease: "easeInOut",
+              },
+            }}
+            exit={{
+              opacity: 0,
+              transition: {
+                duration: 0.25,
+                ease: "easeInOut",
+              },
+            }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+            <SearchResult />
+          </motion.div>
+        ) : (
+          <>
+            <ReusableSwiper
+              endpoint="discover/movie"
+              params={{
+                with_keywords: 163053,
+                with_genres: 27, // horror genre for stronger filtering
+                sort_by: "popularity.desc",
+              }}
+              title="Found Footage Horror"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+            <ReusableSwiper
+              endpoint="movie/157336/recommendations"
+              params={{}}
+              title="Because You Watched Interstellar"
+            />
+            <ReusableSwiper
+              endpoint="discover/movie"
+              params={{
+                with_crew: 525,
+                sort_by: "vote_average.desc",
+              }}
+              title="Christopher Nolan Films"
+            />
+
+            <ReusableSwiper
+              endpoint="trending/movie/week"
+              params={{}}
+              title="Trending This Week"
+            />
+            <ReusableSwiper
+              endpoint="discover/movie"
+              params={{
+                with_origin_country: "JP",
+                sort_by: "popularity.desc",
+              }}
+              title="Popular Japanese Movies"
+            />
+            <ReusableSwiper
+              endpoint="discover/movie"
+              params={{
+                with_genres: "10749,35",
+                sort_by: "popularity.desc",
+              }}
+              title="Rom-Com Movies"
+            />
+
+            <ReusableSwiper
+              endpoint="movie/top_rated"
+              params={{}}
+              title="Top Rated Movies"
+            />
+            <ReusableSwiper
+              endpoint="discover/movie"
+              params={{
+                with_cast: 6384,
+                sort_by: "popularity.desc",
+              }}
+              title="Keanu Reeves Movies"
+            />
+            <ReusableSwiper
+              endpoint="discover/movie"
+              params={{
+                sort_by: "popularity.desc",
+                with_genres: 28,
+              }}
+              title="Action Movies"
+            />
+            <ReusableSwiper
+              endpoint="discover/movie"
+              params={{
+                with_genres: 27,
+                primary_release_year: 2023,
+              }}
+              title="Horror Movies"
+            />
+            <ReusableSwiper
+              endpoint="discover/movie"
+              params={{
+                with_keywords: 186565,
+              }}
+              title="Zombie Movies"
+            />
+            <ReusableSwiper
+              endpoint="discover/movie"
+              params={{
+                with_keywords: 4379,
+              }}
+              title="Time Travel Movies"
+            />
+            <ReusableSwiper
+              endpoint="discover/movie"
+              params={{
+                with_origin_country: "KR",
+                with_genres: 80,
+              }}
+              title="Korean Crime Movies"
+            />
+          </>
+        )}
+      </AnimatePresence>
+
+      <ScrollToTop />
+    </>
   );
 }

@@ -8,13 +8,19 @@ import "ldrs/react/Waveform.css";
 import { TextSearch } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 import MovieCard from "@/components/ui/movie-card";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 export default function SearchResult() {
   const searchParams = useSearchParams();
   const search = searchParams.get("query") ?? "";
   const [tab, setTab] = useState("movie");
-  const { data, fetchNextPage, hasNextPage, isLoading, isFetchingNextPage } =
-    useSearch({ search, media_type: tab });
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isLoading,
+    isFetchingNextPage,
+    isPending,
+  } = useSearch({ search, media_type: tab });
   const { ref, inView } = useInView({
     threshold: 1,
     rootMargin: "200px",
@@ -86,7 +92,7 @@ export default function SearchResult() {
         <Tabs tabs={tabs} onTabChange={(tabId) => setTab(tabId)} />
       </div>
 
-      {isLoading ? (
+      {isLoading || isPending ? (
         <div className=" flex-1 grid place-items-center">
           <Waveform size="35" stroke="3.5" speed="1" color="white" />
         </div>

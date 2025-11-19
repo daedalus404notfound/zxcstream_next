@@ -140,7 +140,7 @@ export default function Modal() {
           <DrawerTitle></DrawerTitle>
           <DrawerDescription></DrawerDescription>
         </DrawerHeader>
-        <ZoomAnimation className="flex flex-col">
+        <ZoomAnimation className="flex flex-col flex-1">
           {loading ? (
             <div className=" flex-1 grid place-items-center bg-card">
               <Waveform size="35" stroke="3.5" speed="1" color="white" />

@@ -33,7 +33,7 @@ export default function ZoomAnimation({
   }, [play]);
 
   return (
-    <motion.div
+    <motion.main
       animate={{
         opacity: play ? 0 : 1,
 
@@ -55,6 +55,6 @@ export default function ZoomAnimation({
       className={`overflow-x-hidden ${className}`}
     >
       {children}
-    </motion.div>
+    </motion.main>
   );
 }

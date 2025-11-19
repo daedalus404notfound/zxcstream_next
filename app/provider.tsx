@@ -2,10 +2,7 @@
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import SideBar from "./sidebar";
-import Footer from "./footer";
-import ZoomAnimation from "./zoom-animation";
-import { usePlayStore } from "@/store/play-animation";
+
 
 export default function Provider({ children }: { children: React.ReactNode }) {
   const [isMounted, setIsMounted] = useState(false);

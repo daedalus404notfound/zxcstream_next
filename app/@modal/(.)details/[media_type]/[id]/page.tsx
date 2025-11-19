@@ -8,24 +8,14 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-
-import { AnimatePresence, motion, number } from "framer-motion";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { motion } from "framer-motion";
 import { IMAGE_BASE_URL } from "@/constants/tmdb";
 import {
-  ArrowRight,
-  Bookmark,
-  BookMarked,
-  Check,
   GalleryVerticalEndIcon,
   Home,
-  Layers2,
   Layers3,
-  Pause,
   Play,
-  PlayIcon,
   Plus,
-  Speaker,
   TextSearch,
   Video,
   VideoOff,
@@ -48,16 +38,13 @@ import { ScrollToTop } from "@/components/ui/scroll-to-top";
 import { Waveform } from "ldrs/react";
 import "ldrs/react/Waveform.css";
 import { usePlayStore } from "@/store/play-animation";
-
 import ZoomAnimation from "@/app/zoom-animation";
-import Link from "next/link";
 import Image from "next/image";
 export default function Modal() {
   const searchParams = useSearchParams();
   const queryUrl = searchParams.get("query");
   const isSearching = Boolean(queryUrl);
   const [open, setOpen] = useState(true);
-  const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const params = useParams();
   const id = Number(params.id);
@@ -131,20 +118,13 @@ export default function Modal() {
   const similarRef = useRef<HTMLDivElement>(null);
   const setPlay = usePlayStore((s) => s.setPlay);
 
-  useEffect(() => {
-    if (open) {
-      const t = setTimeout(() => setMounted(true), 250); // 250ms after open
-      return () => clearTimeout(t);
-    }
-    setMounted(false); // reset when closing
-  }, [open]);
   return (
     <Drawer
       direction="right"
       open={open}
       onOpenChange={(value) => handleCloseDrawer(value)}
     >
-      <DrawerContent className="overflow-y-auto overflow-x-hidden outline-none will-change-opacity">
+      <DrawerContent className="overflow-y-auto overflow-x-hidden outline-none ">
         <DrawerHeader className="sr-only">
           <DrawerTitle></DrawerTitle>
           <DrawerDescription></DrawerDescription>

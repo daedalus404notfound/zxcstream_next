@@ -48,12 +48,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ZoomAnimation>
-          <Provider>
-            {children}
-            {modal}
-          </Provider>
-        </ZoomAnimation>
+        <Provider>
+          {children}
+          {modal}
+        </Provider>
       </body>
     </html>
   );

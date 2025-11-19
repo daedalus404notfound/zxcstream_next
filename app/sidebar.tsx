@@ -12,7 +12,7 @@ import Settings from "./settings";
 import SearchModal from "./search-components/search-modal";
 export default function SideBar() {
   return (
-    <div className="z-999 fixed inset-y-0 left-0 py-10 pl-12 pr-6  flex flex-col justify-between text-foreground ">
+    <div className="z-10 fixed inset-y-0 left-0 py-10 pl-12 pr-6  flex flex-col justify-between text-foreground ">
       <div>
         <img className="size-9" src={logo.src} alt="" />
       </div>

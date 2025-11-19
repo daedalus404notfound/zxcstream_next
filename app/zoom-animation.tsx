@@ -53,7 +53,7 @@ export default function ZoomAnimation({
               duration: 0,
             }
       }
-      className={`overflow-x-hidden ${className}`}
+      className={`${className}`}
     >
       {children}
     </motion.main>

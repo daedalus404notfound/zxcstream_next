@@ -40,6 +40,7 @@ import "ldrs/react/Waveform.css";
 import { usePlayStore } from "@/store/play-animation";
 import ZoomAnimation from "@/app/zoom-animation";
 import Image from "next/image";
+import { MediaSkeleton } from "./skeleton";
 export default function Modal() {
   const searchParams = useSearchParams();
   const queryUrl = searchParams.get("query");
@@ -138,12 +139,10 @@ export default function Modal() {
               ease: "easeOut",
               delay: 0.3,
             }}
-            className="flex flex-col flex-1"
+            className="flex flex-col h-full w-full"
           >
             {loading ? (
-              <div className=" flex-1 grid place-items-center bg-card">
-                <Waveform size="35" stroke="3.5" speed="1" color="white" />
-              </div>
+              <MediaSkeleton />
             ) : data === null ? (
               <div className=" flex-1 grid place-items-center  bg-card">
                 <div className="flex flex-col items-center gap-5">
@@ -152,9 +151,6 @@ export default function Modal() {
                   </span>
                   <div className="text-center">
                     <p className="">No data found</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Try another keyword.
-                    </p>
                   </div>
                 </div>
               </div>

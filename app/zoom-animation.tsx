@@ -35,14 +35,11 @@ export default function ZoomAnimation({
   return (
     <motion.main
       animate={{
-        opacity: play ? 0 : 1,
+        // opacity: play ? 0 : 1,
         zoom: play && distort ? 1.06 : 1,
         y: play && distort ? -12 : 0,
 
-        filter:
-          play && enhance
-            ? "brightness(1.35) contrast(1.1)"
-            : "brightness(1) contrast(1)",
+        filter: play ? "brightness(0) " : "brightness(1) ",
 
         transformPerspective: 900,
       }}

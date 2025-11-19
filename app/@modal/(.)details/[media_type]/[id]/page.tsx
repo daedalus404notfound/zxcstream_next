@@ -51,6 +51,7 @@ import { usePlayStore } from "@/store/play-animation";
 
 import ZoomAnimation from "@/app/zoom-animation";
 import Link from "next/link";
+import Image from "next/image";
 export default function Modal() {
   const searchParams = useSearchParams();
   const queryUrl = searchParams.get("query");
@@ -167,24 +168,19 @@ export default function Modal() {
                   className="absolute inset-0 w-full h-full scale-140"
                 />
 
-                <AnimatePresence>
-                  {(!isPlaying || !isReady) && (
-                    <motion.img
-                      key="backdrop"
-                      initial={{ opacity: 0, filter: "blur(0px)" }}
-                      animate={{ opacity: 1, filter: "blur(0px)" }}
-                      exit={{ opacity: 0, filter: "blur(10px)" }}
-                      transition={{ duration: 0.3, ease: "easeInOut" }}
-                      className="absolute inset-0 w-full h-full object-cover"
-                      src={
-                        data?.backdrop_path
-                          ? `${IMAGE_BASE_URL}/original${data.backdrop_path}`
-                          : "https://github.com/shadcn.png"
-                      }
-                      alt=""
-                    />
-                  )}
-                </AnimatePresence>
+                {(!isPlaying || !isReady) && (
+                  <Image
+                    src={
+                      data?.backdrop_path
+                        ? `${IMAGE_BASE_URL}/original${data.backdrop_path}`
+                        : "https://github.com/shadcn.png"
+                    }
+                    alt={data.title ?? data.name}
+                    fill
+                    className="object-cover"
+                    quality={75}
+                  />
+                )}
 
                 <div className="absolute inset-0 bg-linear-to-t from-background via-background/30 to-background/90" />
                 <div className="absolute inset-0 bg-linear-to-bl from-transparent via-transparent  to-background" />

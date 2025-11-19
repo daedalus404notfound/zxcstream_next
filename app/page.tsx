@@ -8,14 +8,11 @@ import SearchResult from "./search-components/search-results";
 import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { ScrollToTop } from "@/components/ui/scroll-to-top";
-import { usePlayStore } from "@/store/play-animation";
 export default function MovieWebsite() {
   const searchParams = useSearchParams();
   const query = searchParams.get("query");
   const isSearching = Boolean(query);
-  const { play } = usePlayStore();
 
-  console.log(play);
   return (
     <>
       <LandingPage />

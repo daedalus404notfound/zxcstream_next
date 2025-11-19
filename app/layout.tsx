@@ -11,6 +11,15 @@ import Footer from "./footer";
 import ZoomAnimation from "./zoom-animation";
 import { usePlayStore } from "@/store/play-animation";
 import SideBar from "./sidebar";
+import {
+  Film,
+  GalleryVertical,
+  Home,
+  MoreHorizontal,
+  Search,
+  Tv,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,11 +48,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <SideBar />
         <ZoomAnimation>
           <Provider>
-            <SideBar />
             {children}
-            <Footer />
             {modal}
           </Provider>
         </ZoomAnimation>

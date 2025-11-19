@@ -45,7 +45,22 @@
 .my-scrollbar .swiper-scrollbar-drag {
   background-color: #ff0000; /* scrollbar thumb */
 }
-
+.mask-gradient {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 20%,
+    black 80%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 20%,
+    black 80%,
+    transparent 100%
+  );
+}
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

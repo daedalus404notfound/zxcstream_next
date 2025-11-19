@@ -36,9 +36,7 @@ export default function ZoomAnimation({
     <motion.main
       animate={{
         opacity: play ? 0 : 1,
-
         zoom: play && distort ? 1.06 : 1,
-
         y: play && distort ? -12 : 0,
 
         filter:
@@ -48,10 +46,16 @@ export default function ZoomAnimation({
 
         transformPerspective: 900,
       }}
-      transition={{
-        duration: 1.25,
-        ease: [0.1, 0.7, 0.9, 1],
-      }}
+      transition={
+        play
+          ? {
+              duration: 1.25,
+              ease: [0.1, 0.7, 0.9, 1],
+            }
+          : {
+              duration: 0,
+            }
+      }
       className={`overflow-x-hidden ${className}`}
     >
       {children}

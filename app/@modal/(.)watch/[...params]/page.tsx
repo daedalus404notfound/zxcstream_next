@@ -46,7 +46,7 @@ export default function WatchMode() {
 
         <ArrowLeft
           onClick={() => handleCloseDrawer(false)}
-          className="cursor-pointer"
+          className="cursor-pointer size-10"
         />
       </DialogContent>
     </Dialog>

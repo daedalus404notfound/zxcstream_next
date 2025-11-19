@@ -18,7 +18,8 @@ export default function SearchModal() {
   const searchParams = useSearchParams();
   const query = searchParams.get("query");
   const [text, setText] = useState(query ?? "");
-  const debounced = useDebounce(text, 800);
+  const typeDebounced = useDebounce(text, 800);
+  const clearDebounced = useDebounce(text, 100);
   const [isPending, startTransition] = useTransition();
   useEffect(() => {
     if (
@@ -38,14 +39,18 @@ export default function SearchModal() {
     }
   }, [open]);
 
-  // push to router only when debounced value updates
   useEffect(() => {
-    if (debounced.length > 0 && text.length > 0) {
-      router.replace(`/search?query=${encodeURIComponent(debounced)}`);
-    } else {
+    // 1. User cleared input (fast)
+    if (clearDebounced.trim().length === 0) {
       router.replace(lastPage);
+      return;
     }
-  }, [debounced, lastPage, text]);
+
+    // 2. User is typing (slow)
+    if (typeDebounced.trim().length > 0) {
+      router.replace(`/search?query=${encodeURIComponent(typeDebounced)}`);
+    }
+  }, [typeDebounced, clearDebounced, lastPage]);
 
   // handle input change
   const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {

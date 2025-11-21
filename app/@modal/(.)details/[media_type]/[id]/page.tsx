@@ -35,7 +35,6 @@ import { useSeasonStore } from "@/store/season";
 import Episodes from "./episodes";
 import { Separator } from "@/components/ui/separator";
 import { ScrollToTop } from "@/components/ui/scroll-to-top";
-import { Waveform } from "ldrs/react";
 import "ldrs/react/Waveform.css";
 import { usePlayStore } from "@/store/play-animation";
 import ZoomAnimation from "@/app/zoom-animation";

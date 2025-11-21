@@ -1,4 +1,4 @@
-import { Stream } from "@/api/local-fetch";
+import { Stream, Streams } from "@/api/local-fetch";
 import { Subtitle } from "@/api/subtitle-hooks";
 import {
   Select,
@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import PlayerSubtitle from "./player-subtitle";
 import { Button } from "@/components/ui/button";
+import QualitySelector from "./player-quality";
 
 export default function ZXCPlayer({
   isLoading,
@@ -45,7 +46,7 @@ export default function ZXCPlayer({
 }: {
   isLoading: boolean;
   isError: boolean;
-  localData: Stream | null;
+  localData: Streams | null;
   subtitleQuery: Subtitle[];
   metaData: MovieTypes | null;
   closePlayer: boolean;
@@ -119,7 +120,7 @@ export default function ZXCPlayer({
               onClick={() => setClosePlayer(false)}
               className="cursor-pointer pointer-events-auto"
             />
-            {metaData?.media_type === "tv" && isEnding && (
+            {isEnding && (
               <Button>
                 Next Episode <ArrowRight />
               </Button>
@@ -151,6 +152,9 @@ export default function ZXCPlayer({
                 </div>
               </div>
               <div className="flex gap-10">
+                {localData?.stream.type === "file" && (
+                  <QualitySelector localData={localData} />
+                )}
                 <GalleryVerticalEnd />
                 <PlayerSubtitle
                   subtitleQuery={subtitleQuery}

@@ -119,6 +119,7 @@
 // }
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import { useState } from "react";
 
 export interface Stream {
   id: string;
@@ -127,8 +128,17 @@ export interface Stream {
   headers?: Record<string, string>;
   flags?: string[];
   captions?: any[];
+  qualities: Record<string, FileQuality>;
+}
+export interface FileQuality {
+  type: string; // "mp4"
+  url: string;
 }
 
+export interface Streams {
+  sourceId: string;
+  stream: Stream;
+}
 export default function useLocalFetch({
   id,
   media_type,
@@ -148,7 +158,7 @@ export default function useLocalFetch({
   seasonTitle: string;
   episodeCount: number;
 }) {
-  const query = useQuery<Stream | null>({
+  const query = useQuery<Streams | null>({
     enabled:
       (!!id && media_type === "movie") ||
       (!!id && media_type === "tv" && episodeCount !== 0),
@@ -182,7 +192,7 @@ export default function useLocalFetch({
         const { data } = await axios.get("/api/scrape", { params });
 
         if (!data.success) return null;
-        return data.streams.stream as Stream | null;
+        return data.streams as Streams | null;
       } catch (error) {
         console.error("Error fetching stream:", error);
         return null;

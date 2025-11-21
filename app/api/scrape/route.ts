@@ -70,6 +70,7 @@ export async function GET(req: Request) {
       const streams = await providers.runAll({ media });
       return NextResponse.json({ success: true, streams });
     } catch (error) {
+      console.error("STREAM ERROR:", error);
       return NextResponse.json({
         success: false,
         streams: null,
@@ -104,6 +105,7 @@ export async function GET(req: Request) {
     const streams = await providers.runAll({ media });
     return NextResponse.json({ success: true, streams });
   } catch (error) {
+    console.error("STREAM ERROR:", error);
     return NextResponse.json({
       success: false,
       streams: null,

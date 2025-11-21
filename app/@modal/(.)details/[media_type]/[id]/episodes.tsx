@@ -14,7 +14,7 @@ export default function Episodes({ id }: { id: number }) {
   const { activateSpoiler, setActivateSpoiler } = useSpoilerStore();
   const savedSeason = getSeasonSelect(id);
   const season_number = savedSeason?.number ?? 1;
-  const query = useTvSeason(id, season_number);
+  const query = useTvSeason({ id, season_number, media_type: "tv" });
   const [seemore, setSeeMore] = useState(false);
   const episodes = query.data?.episodes ?? [];
 

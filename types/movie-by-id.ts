@@ -23,6 +23,10 @@ export interface MovieTypes {
   seasons: Season[];
   vote_count: number;
   popularity: number;
+  external_ids: ExternalIdsTypes;
+}
+interface ExternalIdsTypes {
+  imdb_id: string;
 }
 export interface Season {
   air_date: string | null;

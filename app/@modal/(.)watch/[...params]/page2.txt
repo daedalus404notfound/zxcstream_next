@@ -1,0 +1,70 @@
+"use client";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+
+interface QualityInfo {
+  type: string;
+  url: string;
+}
+
+interface Stream {
+  type?: string;
+  url: string;
+  quality?: string;
+}
+
+export default function Home() {
+  const { params } = useParams();
+  const media_type = String(params?.[0]);
+  const id = Number(params?.[1]);
+  const season = Number(params?.[2]) || 1;
+  const episode = Number(params?.[3]) || 1;
+  const [streams, setStreams] = useState<Stream[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchStreams() {
+      setLoading(true);
+      const res = await fetch("/api/scrape?tmdbId=556574");
+      const data = await res.json();
+
+      if (data.success && data.streams) {
+        const qualities = data.streams.stream.qualities as Record<
+          string,
+          QualityInfo
+        >;
+
+        const streamArray: Stream[] = Object.entries(qualities).map(
+          ([quality, info]) => ({
+            url: info.url,
+            type: info.type,
+            quality,
+          })
+        );
+
+        setStreams(streamArray);
+      } else {
+        setStreams([]);
+      }
+
+      setLoading(false);
+    }
+
+    fetchStreams();
+  }, []);
+
+  return (
+    <div>
+      <h1>Movie Streams</h1>
+      {loading && <p>Loading streams...</p>}
+      {!loading && streams.length === 0 && <p>No streams found.</p>}
+
+      {streams.map((stream, idx) => (
+        <div key={idx}>
+          <p>{stream.quality || stream.type}</p>
+          <video controls width={600} src={stream.url} />
+        </div>
+      ))}
+    </div>
+  );
+}

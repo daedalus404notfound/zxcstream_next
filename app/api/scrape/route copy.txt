@@ -1,0 +1,90 @@
+import { NextResponse } from "next/server";
+import {
+  makeProviders,
+  makeStandardFetcher,
+  targets,
+} from "@p-stream/providers";
+
+const providers = makeProviders({
+  fetcher: makeStandardFetcher(fetch),
+  target: targets.NATIVE,
+});
+
+const TMDB_API = "https://api.themoviedb.org/3";
+const KEY = process.env.NEXT_PUBLIC_TMDB_KEY;
+
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+
+  const tmdbId = url.searchParams.get("tmdbId");
+  const mediaType = url.searchParams.get("media_type") || "movie";
+  const seasonNum = Number(url.searchParams.get("season") || 1);
+  const episodeNum = Number(url.searchParams.get("episode") || 1);
+
+  if (!tmdbId)
+    return NextResponse.json({ success: false, error: "Missing TMDB ID" });
+
+  // Fetch TMDB metadata
+  const tmdbRes = await fetch(
+    `${TMDB_API}/${
+      mediaType === "show" ? "tv" : "movie"
+    }/${tmdbId}?api_key=${KEY}`
+  );
+  const meta = await tmdbRes.json();
+
+  const title = meta.title || meta.name;
+  const releaseYear = Number(
+    (meta.release_date || meta.first_air_date || "0000").slice(0, 4)
+  );
+
+  // --------------------------
+  // MOVIE MEDIA (works)
+  // --------------------------
+  if (mediaType === "movie") {
+    const media = {
+      type: "movie" as const,
+      tmdbId,
+      title,
+      releaseYear,
+    };
+
+    const streams = await providers.runAll({ media });
+    return NextResponse.json({ success: true, streams });
+  }
+
+  // --------------------------
+  // SHOW MEDIA (correct nested shape)
+  // --------------------------
+
+  // Fetch season data so we can fill season.title + episodeCount
+  const seasonRes = await fetch(
+    `${TMDB_API}/tv/${tmdbId}/season/${seasonNum}?api_key=${KEY}`
+  );
+  const seasonMeta = await seasonRes.json();
+
+  const seasonTitle = seasonMeta.name || `Season ${seasonNum}`;
+  const episodeCount = seasonMeta.episodes?.length;
+
+  // Build CORRECT ShowMedia object
+  const media = {
+    type: "show" as const,
+    tmdbId,
+    title,
+    releaseYear,
+
+    season: {
+      number: seasonNum,
+      tmdbId, // Yes, P-stream uses TMDB ID again
+      title: seasonTitle,
+      episodeCount,
+    },
+
+    episode: {
+      number: episodeNum,
+      tmdbId,
+    },
+  };
+
+  const streams = await providers.runAll({ media });
+  return NextResponse.json({ success: true, streams });
+}

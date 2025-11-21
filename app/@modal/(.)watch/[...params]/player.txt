@@ -1,0 +1,191 @@
+import { Stream } from "@/api/local-fetch";
+import { Subtitle } from "@/api/subtitle-hooks";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Slider } from "@/components/ui/slider";
+import { IMAGE_BASE_URL } from "@/constants/tmdb";
+import { MovieTypes } from "@/types/movie-by-id";
+import Hls from "hls.js";
+import { Ring } from "ldrs/react";
+import "ldrs/react/Ring.css";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Bookmark,
+  GalleryVerticalEnd,
+  Languages,
+  Maximize,
+  Play,
+  Redo,
+  Undo,
+  Volume2,
+} from "lucide-react";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+export default function ZXCPlayer({
+  isLoading,
+  isError,
+  localData,
+  subtitleQuery,
+  metaData,
+}: {
+  isLoading: boolean;
+  isError: boolean;
+  localData: Stream | null;
+  subtitleQuery: Subtitle[];
+  metaData: MovieTypes | null;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const hlsRef = useRef<Hls | null>(null);
+  const defaultEN =
+    subtitleQuery.find((sub) => sub.language === "en")?.url ?? "";
+  const [selectedSubUrl, setSelectedSubUrl] = useState<string>("");
+  console.log("selectedSubUrl", selectedSubUrl);
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !localData) return;
+    if (localData.type === "hls") {
+      if (Hls.isSupported()) {
+        hlsRef.current = new Hls();
+        hlsRef.current.loadSource(localData.playlist);
+        hlsRef.current.attachMedia(video);
+      } else {
+        video.src = localData.playlist;
+      }
+    } else {
+      video.src = localData.playlist;
+    }
+    return () => {
+      hlsRef.current?.destroy();
+    };
+  }, [localData]);
+
+  useEffect(() => {
+    if (defaultEN && localData) {
+      setSelectedSubUrl(defaultEN);
+    }
+  }, [subtitleQuery, localData]);
+  return (
+    <div>
+      {/* <Select value={selectedSubUrl} onValueChange={setSelectedSubUrl}>
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="Select subtitle" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            <SelectLabel>Subtitles</SelectLabel>
+            {subtitleQuery.map((sub) => (
+              <SelectItem key={sub.id} value={sub.url}>
+                {sub.name}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select> */}
+
+      {isLoading ? (
+        <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2">
+          <Ring size="80" stroke="8" bgOpacity="0" speed="2" color="white" />
+        </div>
+      ) : !isLoading && localData === null ? (
+        <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2">
+          {isError ? <p>Error loading streams.</p> : <p>404 not found.</p>}
+        </div>
+      ) : (
+        <div className="h-full w-full relative overflow-hidden">
+          <video className="absolute inset-0" ref={videoRef}>
+            {selectedSubUrl && (
+              <track
+                key={selectedSubUrl}
+                kind="subtitles"
+                src={selectedSubUrl}
+                default
+              />
+            )}
+          </video>
+
+          <div className="bg-red-400 absolute inset-0">
+            <img
+              src={`${IMAGE_BASE_URL}/original${metaData?.backdrop_path}`}
+              alt=""
+              className="h-full w-full object-cover brightness-75"
+            />
+          </div>
+          <div className="absolute  p-8">
+            <ArrowLeft size={30} />
+          </div>
+          <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2">
+            <Ring size="90" stroke="10" bgOpacity="0" speed="2" color="white" />
+          </div>
+
+          <div className="absolute w-[95%]  bottom-6 p-8  -translate-x-1/2 left-1/2 ">
+            <div className="flex">
+              <div className="max-w-[38%]">
+                {metaData?.genres && (
+                  <div className="inline-block px-4 py-1 bg-red-500/20  tracking-wide uppercase  rounded-full text-xs text-red-600 mb-6">
+                    {metaData?.genres[0].name}
+                  </div>
+                )}
+
+                <h1 className="text-6xl font-bold mb-6 leading-none">
+                  {metaData?.title || metaData?.name}
+                </h1>
+                <div className="flex items-center gap-6 mb-8">
+                  <div className="flex items-center gap-2">
+                    <div className="text-3xl font-bold text-red-500">
+                      {metaData?.vote_average.toFixed(1)}
+                    </div>
+                    <div className="text-sm text-muted-foreground">/ 10</div>
+                  </div>
+                  <div className="h-8 w-px bg-white/10"></div>
+                  <div className="text-muted-foreground">
+                    {metaData?.release_date ||
+                      (metaData?.first_air_date &&
+                        new Date(
+                          metaData?.release_date || metaData?.first_air_date
+                        ).getFullYear())}
+                  </div>
+                </div>
+                <p className="text-muted-foreground leading-relaxed mb-10 line-clamp-4">
+                  {metaData?.overview}
+                </p>
+              </div>
+              <div className="flex-1 flex justify-end items-end py-8 ">
+                <div className="flex flex-col justify-end items-end gap-10">
+                  <Button>
+                    Next Episode <ArrowRight />
+                  </Button>
+                  <div className="flex gap-10">
+                    <GalleryVerticalEnd /> <Languages /> <Volume2 />{" "}
+                    <Maximize />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className=" ">
+              <div className="flex items-center gap-4">
+                <span>0:00</span>
+                <Slider
+                  className="**:data-[slot=slider-thumb]:shadow-none [&>:last-child>span]:h-6 [&>:last-child>span]:w-3 [&>:last-child>span]:border-[3px] [&>:last-child>span]:border-background [&>:last-child>span]:bg-primary [&>:last-child>span]:ring-offset-0"
+                  defaultValue={[33]}
+                  max={100}
+                  step={1}
+                />
+                <span>0:00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

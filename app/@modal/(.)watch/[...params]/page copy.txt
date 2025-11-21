@@ -1,0 +1,140 @@
+"use client";
+import Hls from "hls.js";
+import { usePlayStore } from "@/store/play-animation";
+import { ArrowLeft } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Ring } from "ldrs/react";
+import "ldrs/react/Ring.css";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+interface QualityInfo {
+  type: string;
+  url: string;
+}
+
+interface Stream {
+  type?: string;
+  url: string;
+  quality?: string;
+}
+
+export default function WatchMode() {
+  const router = useRouter();
+  const { params } = useParams();
+  const media_type = String(params?.[0]);
+  const id = Number(params?.[1]);
+  const season = Number(params?.[2]) || 1;
+  const episode = Number(params?.[3]) || 1;
+
+  const [open, setOpen] = useState(true);
+  const setPlay = usePlayStore((s) => s.setPlay);
+
+  const handleCloseDrawer = (value: boolean) => {
+    setOpen(value);
+    if (!value) {
+      setPlay(false);
+      setTimeout(() => router.back(), 300);
+    }
+  };
+
+  // TanStack Query
+  const query = useQuery<Stream[]>({
+    queryKey: ["streams", id, media_type, season, episode],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/scrape?tmdbId=${id}&media_type=${
+          media_type === "tv" ? "show" : "movie"
+        }` + (media_type === "tv" ? `&season=${season}&episode=${episode}` : "")
+      );
+      const json = await res.json();
+
+      if (!json.success || !json.streams) return [];
+
+      const streamObj = json.streams.stream;
+
+      // Case 1: qualities exist (file)
+      if (streamObj.qualities) {
+        const qualities = streamObj.qualities as Record<string, QualityInfo>;
+        return Object.entries(qualities).map(([quality, info]) => ({
+          url: info.url,
+          type: info.type,
+          quality,
+        })) as Stream[];
+      }
+
+      // Case 2: HLS / playlist stream
+      if (streamObj.playlist) {
+        return [
+          {
+            url: streamObj.playlist,
+            type: streamObj.type,
+            quality: "HLS",
+          },
+        ];
+      }
+
+      return [];
+    },
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
+  const data = query.data ?? [];
+  const isLoading = query.isLoading;
+  const isError = query.isError;
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent showCloseButton={false}>
+        <DialogHeader className="sr-only">
+          <DialogTitle>Are you absolutely sure?</DialogTitle>
+        </DialogHeader>
+        <div className="absolute top-0 z-10 left-0 p-6">
+          <ArrowLeft
+            onClick={() => handleCloseDrawer(false)}
+            className="cursor-pointer"
+            size={30}
+            strokeWidth={1}
+          />
+        </div>
+        <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2">
+          {isLoading ? (
+            <Ring size="80" stroke="8" bgOpacity="0" speed="2" color="white" />
+          ) : (
+            !isLoading && data.length === 0 && <p>404 not found.</p>
+          )}
+          {isError && <p>Error loading streams.</p>}
+        </div>
+
+        {data.map((stream, idx) => (
+          <div key={idx} className="h-full w-full">
+            {stream.type === "hls" ? (
+              <video
+                className="h-full w-full"
+                controls
+                ref={(video) => {
+                  if (!video) return;
+                  if (Hls.isSupported()) {
+                    const hls = new Hls();
+                    hls.loadSource(stream.url);
+                    hls.attachMedia(video);
+                  } else {
+                    // fallback for Safari (native HLS support)
+                    video.src = stream.url;
+                  }
+                }}
+              />
+            ) : (
+              <video className="h-full w-full" controls src={stream.url} />
+            )}
+          </div>
+        ))}
+      </DialogContent>
+    </Dialog>
+  );
+}

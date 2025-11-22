@@ -4,7 +4,7 @@ import {
   makeStandardFetcher,
   targets,
 } from "@p-stream/providers";
-import { localhostSpoofFetch } from "@/lib/localhost";
+import { stealthFetch } from "@/lib/ultra-play-button";
 export interface MovieMedia {
   type: "movie";
   tmdbId: string;
@@ -33,7 +33,7 @@ export interface ShowMedia {
 }
 
 const providers = makeProviders({
-  fetcher: makeStandardFetcher(localhostSpoofFetch),
+  fetcher: makeStandardFetcher(stealthFetch),
   target: targets.NATIVE,
 });
 

@@ -1,7 +1,4 @@
-export const runtime = "nodejs"; // forces Node fetch, not Edge
-
 import { NextResponse } from "next/server";
-
 import {
   makeProviders,
   makeStandardFetcher,
@@ -70,17 +67,12 @@ export async function GET(req: Request) {
     };
     try {
       const streams = await providers.runAll({ media });
-      console.log("streams:", streams);
-      if (!streams) {
-        console.warn("No streams found. Check source availability.");
-      }
       return NextResponse.json({ success: true, streams });
     } catch (error) {
-      console.error("STREAM ERROR:", error);
       return NextResponse.json({
         success: false,
-        streams: null,
-        message: "404 not found, Try switching server.",
+        streams: [],
+        message: "404 not found.",
       });
     }
   }
@@ -109,17 +101,12 @@ export async function GET(req: Request) {
 
   try {
     const streams = await providers.runAll({ media });
-    console.log("streams:", streams);
-    if (!streams) {
-      console.warn("No streams found. Check source availability.");
-    }
     return NextResponse.json({ success: true, streams });
   } catch (error) {
-    console.error("STREAM ERROR:", error);
     return NextResponse.json({
       success: false,
-      streams: null,
-      message: "404 not found, Try switching server.",
+      streams: [],
+      message: "404 not found. Try switching server.",
     });
   }
 }

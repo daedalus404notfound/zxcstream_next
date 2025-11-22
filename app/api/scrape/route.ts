@@ -31,8 +31,29 @@ export interface ShowMedia {
   };
 }
 
+const customFetch: typeof fetch = (input, init) => {
+  return fetch(input, {
+    ...init,
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+      Accept:
+        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+      "Accept-Language": "en-US,en;q=0.9",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      Connection: "keep-alive",
+      "Upgrade-Insecure-Requests": "1",
+      "Sec-Fetch-Dest": "document",
+      "Sec-Fetch-Mode": "navigate",
+      "Sec-Fetch-Site": "none",
+      ...((init?.headers as Record<string, string>) || {}),
+    },
+    signal: init?.signal ?? AbortSignal.timeout?.(30_000), // 30s timeout (Node 18+)
+  });
+};
+
 const providers = makeProviders({
-  fetcher: makeStandardFetcher(fetch),
+  fetcher: makeStandardFetcher(customFetch), // Only 1 argument!
   target: targets.NATIVE,
 });
 

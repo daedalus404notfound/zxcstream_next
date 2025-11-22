@@ -5,14 +5,15 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function GET(request: NextRequest) {
-  const targetUrl = request.nextUrl.searchParams.get("url");
+  let targetUrl = request.nextUrl.searchParams.get("url");
   const referer = request.nextUrl.searchParams.get("referer") || "";
   const origin = request.nextUrl.searchParams.get("origin") || "";
 
   if (!targetUrl) return new Response("Missing url", { status: 400 });
 
-  // Force trailing slash on referer if missing (fixes some 403s)
+  // Pass through original referer/origin to sub-requests (key fix!)
   const finalReferer = referer.endsWith("/") ? referer : `${referer}/`;
+  const finalOrigin = origin.endsWith("/") ? origin : `${origin}/`;
 
   const headers = new Headers({
     "User-Agent":
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
     "Accept-Encoding": "gzip, deflate",
     Connection: "keep-alive",
     Referer: finalReferer,
-    Origin: origin,
+    Origin: finalOrigin,
     "Sec-Fetch-Dest": "empty",
     "Sec-Fetch-Mode": "cors",
     "Sec-Fetch-Site": "cross-site",
@@ -36,7 +37,9 @@ export async function GET(request: NextRequest) {
     });
 
     if (!response.ok) {
-      console.error(`Proxy failed: ${response.status} for ${targetUrl}`);
+      console.error(
+        `Proxy failed: ${response.status} for ${targetUrl} | Referer: ${finalReferer}`
+      );
       return new Response("Stream blocked or expired", { status: 403 });
     }
 
@@ -48,16 +51,24 @@ export async function GET(request: NextRequest) {
       targetUrl.endsWith(".m3u8");
 
     if (isPlaylist) {
-      // Rewrite relative URLs to absolute for direct .ts fetches (saves bandwidth)
+      // Rewrite ALL playlists (master + sub) — inject proxy for segments/sub-playlists
       let text = await response.text();
       const base = targetUrl.slice(0, targetUrl.lastIndexOf("/") + 1);
+      const proxyBase = request.nextUrl.origin + request.nextUrl.pathname; // e.g., https://zxcstream-next.vercel.app/api/proxy
 
       text = text
         .split("\n")
         .map((line) => {
           line = line.trim();
           if (line && !line.startsWith("#") && !line.startsWith("http")) {
-            return new URL(line, base).href;
+            // Relative → full absolute → proxy it with same referer/origin
+            const absolute = new URL(line, base).href;
+            const proxied = `${proxyBase}?url=${encodeURIComponent(
+              absolute
+            )}&referer=${encodeURIComponent(
+              referer
+            )}&origin=${encodeURIComponent(origin)}`;
+            return proxied;
           }
           return line;
         })
@@ -73,7 +84,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // .ts segments: Stream with max caching (Cloudflare caches forever after first hit)
+    // .ts segments: Stream with max cache (Cloudflare/Vercel caches forever)
     const proxyHeaders = new Headers(response.headers);
     proxyHeaders.set("Access-Control-Allow-Origin", "*");
     proxyHeaders.set("Cache-Control", "public, max-age=31536000, immutable");

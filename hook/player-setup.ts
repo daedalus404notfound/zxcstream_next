@@ -53,38 +53,53 @@ export function useVideoSetup(localData: Streams | null) {
     const video = videoRef.current;
     if (!video || !localData?.stream) return;
 
-    // Clean up previous HLS instance
+    // Destroy previous instance
     hlsRef.current?.destroy();
     hlsRef.current = null;
 
     if (localData.stream.type === "hls") {
       const playlist = localData.stream.playlist;
-      const referer = localData.stream.headers?.Referer;
-      const origin = localData.stream.headers?.Origin;
+      const referer = localData.stream.headers?.Referer || "";
+      const origin = localData.stream.headers?.Origin || referer;
 
-      // Build proxy URL safely
+      // Force trailing slash — StreamWish now requires it on some domains
+      const finalReferer = referer.endsWith("/") ? referer : referer + "/";
+      const finalOrigin = origin.endsWith("/") ? origin : origin + "/";
+
       const params = new URLSearchParams({ url: playlist });
-      if (referer) params.set("referer", referer);
-      if (origin) params.set("origin", origin);
+      if (finalReferer) params.set("referer", finalReferer);
+      if (finalOrigin) params.set("origin", finalOrigin);
 
       const proxyUrl = `/api/proxy?${params.toString()}`;
 
-      console.log("Playing HLS via proxy:", proxyUrl);
+      console.log("HLS proxy URL →", proxyUrl);
 
       if (Hls.isSupported()) {
         const hls = new Hls({
-          // Optional: improve reliability
-          maxLoadingDelay: 10,
-          xhrSetup: (xhr) => {
-            xhr.withCredentials = false;
+          enableWorker: true,
+          lowLatencyMode: true,
+          backBufferLength: 90,
+
+          // THIS IS THE CRITICAL LINE — forces hls.js to use the EXACT URL we give it
+          xhrSetup: (xhr, url) => {
+            xhr.open("GET", url, true); // ← preserves ?t=...&s=... tokens + our proxy params
           },
         });
 
         hls.loadSource(proxyUrl);
         hls.attachMedia(video);
         hlsRef.current = hls;
-      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-        // Safari native
+
+        // Optional: retry on fatal errors
+        hls.on(Hls.Events.ERROR, (event, data) => {
+          if (data.fatal) {
+            console.error("HLS fatal error:", data);
+            setTimeout(() => hls.loadSource(proxyUrl), 3000);
+          }
+        });
+      }
+      // Safari native HLS
+      else if (video.canPlayType("application/vnd.apple.mpegurl")) {
         video.src = proxyUrl;
       }
     }
@@ -101,7 +116,6 @@ export function useVideoSetup(localData: Streams | null) {
       }
     }
 
-    // Cleanup
     return () => {
       hlsRef.current?.destroy();
       hlsRef.current = null;

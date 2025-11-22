@@ -1,9 +1,9 @@
 // proxyFetcher.ts
 import { HttpsProxyAgent } from "https-proxy-agent";
-
+const SESSION_ID = Math.floor(Math.random() * 999999);
 const PROXY_HOST = "brd.superproxy.io";
 const PROXY_PORT = 33335;
-const PROXY_USERNAME = "brd-customer-hl_ad40ad66-zone-residential_proxy1";
+const PROXY_USERNAME = `brd-customer-hl_ad40ad66-zone-residential_proxy1-session-${SESSION_ID}`;
 const PROXY_PASSWORD = "h6th01nm8syj";
 
 const proxyUrl = `http://${PROXY_USERNAME}:${PROXY_PASSWORD}@${PROXY_HOST}:${PROXY_PORT}`;

@@ -4,7 +4,7 @@ import {
   makeStandardFetcher,
   targets,
 } from "@p-stream/providers";
-import { stealthFetch } from "@/lib/ultra-play-button";
+import { localhostSpoofFetch } from "@/lib/localhost";
 export interface MovieMedia {
   type: "movie";
   tmdbId: string;
@@ -33,9 +33,10 @@ export interface ShowMedia {
 }
 
 const providers = makeProviders({
-  fetcher: makeStandardFetcher(stealthFetch),
+  fetcher: makeStandardFetcher(localhostSpoofFetch),
   target: targets.NATIVE,
 });
+
 export async function GET(req: Request) {
   console.log(
     "providers",
@@ -106,7 +107,7 @@ export async function GET(req: Request) {
     return NextResponse.json({
       success: false,
       streams: [],
-      message: "404 not found. Try switching",
+      message: "404 not found.",
     });
   }
 }

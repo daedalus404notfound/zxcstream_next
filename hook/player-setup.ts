@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import Hls from "hls.js";
-import {  Streams } from "@/api/local-fetch";
+import { Streams } from "@/api/local-fetch";
 
 export function useVideoSetup(localData: Streams | null) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -13,7 +13,9 @@ export function useVideoSetup(localData: Streams | null) {
     if (localData.stream?.type === "hls") {
       if (Hls.isSupported()) {
         hlsRef.current = new Hls();
-        hlsRef.current.loadSource(localData.stream?.playlist);
+        hlsRef.current.loadSource(
+          `/api/proxy?url=${localData.stream?.playlist}`
+        );
         hlsRef.current.attachMedia(video);
       } else {
         video.src = localData.stream?.playlist;
@@ -33,3 +35,5 @@ export function useVideoSetup(localData: Streams | null) {
 
   return videoRef;
 }
+
+// https://scrennnifu.click/movie | serial/tt0899043/playlist.m3u8

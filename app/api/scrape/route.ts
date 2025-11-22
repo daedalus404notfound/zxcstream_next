@@ -4,7 +4,7 @@ import {
   makeStandardFetcher,
   targets,
 } from "@p-stream/providers";
-import { stealthFetch } from "@/lib/ultra-play-button";
+import { proxiedFetch } from "./proxyFetcher";
 export interface MovieMedia {
   type: "movie";
   tmdbId: string;
@@ -33,7 +33,8 @@ export interface ShowMedia {
 }
 
 const providers = makeProviders({
-  fetcher: makeStandardFetcher(stealthFetch),
+  fetcher: makeStandardFetcher(proxiedFetch),
+  proxiedFetcher: makeStandardFetcher(proxiedFetch),
   target: targets.NATIVE,
 });
 
@@ -72,7 +73,7 @@ export async function GET(req: Request) {
     } catch (error) {
       return NextResponse.json({
         success: false,
-        streams: [],
+        streams: null,
         message: "404 not found.",
       });
     }
@@ -106,7 +107,7 @@ export async function GET(req: Request) {
   } catch (error) {
     return NextResponse.json({
       success: false,
-      streams: [],
+      streams: null,
       message: "404 not found.",
     });
   }

@@ -4,7 +4,7 @@ export interface Stream {
   id: string;
   type?: string;
   playlist: string;
-  headers?: Record<string, string>;
+  headers?: HeaderTypes;
   flags?: string[];
   captions?: any[];
   qualities: Record<string, FileQuality>;
@@ -13,7 +13,10 @@ export interface FileQuality {
   type: string; // "mp4"
   url: string;
 }
-
+interface HeaderTypes {
+  Origin: string;
+  Referer: string;
+}
 export interface Streams {
   sourceId: string;
   stream: Stream;

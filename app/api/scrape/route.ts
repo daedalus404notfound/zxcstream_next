@@ -4,6 +4,7 @@ import {
   makeStandardFetcher,
   targets,
 } from "@p-stream/providers";
+import { stealthFetch } from "@/lib/ultra-play-button";
 export interface MovieMedia {
   type: "movie";
   tmdbId: string;
@@ -31,29 +32,8 @@ export interface ShowMedia {
   };
 }
 
-const customFetch: typeof fetch = (input, init) => {
-  return fetch(input, {
-    ...init,
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
-      Accept:
-        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-      "Accept-Language": "en-US,en;q=0.9",
-      "Accept-Encoding": "gzip, deflate, br, zstd",
-      Connection: "keep-alive",
-      "Upgrade-Insecure-Requests": "1",
-      "Sec-Fetch-Dest": "document",
-      "Sec-Fetch-Mode": "navigate",
-      "Sec-Fetch-Site": "none",
-      ...((init?.headers as Record<string, string>) || {}),
-    },
-    signal: init?.signal ?? AbortSignal.timeout?.(30_000), // 30s timeout (Node 18+)
-  });
-};
-
 const providers = makeProviders({
-  fetcher: makeStandardFetcher(customFetch), // Only 1 argument!
+  fetcher: makeStandardFetcher(stealthFetch),
   target: targets.NATIVE,
 });
 
@@ -92,7 +72,7 @@ export async function GET(req: Request) {
     } catch (error) {
       return NextResponse.json({
         success: false,
-        streams: [],
+        streams: null,
         message: "404 not found.",
       });
     }
@@ -126,8 +106,8 @@ export async function GET(req: Request) {
   } catch (error) {
     return NextResponse.json({
       success: false,
-      streams: [],
-      message: "404 not found. Try switching server.",
+      streams: null,
+      message: "404 not found.",
     });
   }
 }

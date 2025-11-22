@@ -66,8 +66,8 @@ export async function GET(request: NextRequest) {
             const proxied = `${proxyBase}?url=${encodeURIComponent(
               absolute
             )}&referer=${encodeURIComponent(
-              referer
-            )}&origin=${encodeURIComponent(origin)}`;
+              finalReferer
+            )}&origin=${encodeURIComponent(finalOrigin)}`;
             return proxied;
           }
           return line;

@@ -34,7 +34,6 @@ export interface ShowMedia {
 
 const providers = makeProviders({
   fetcher: makeStandardFetcher(proxiedFetch),
-  proxiedFetcher: makeStandardFetcher(proxiedFetch),
   target: targets.NATIVE,
 });
 

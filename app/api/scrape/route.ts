@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
+import type { DefaultedFetcherOptions } from "@p-stream/providers";
 import {
+  FetcherResponse,
   makeProviders,
   makeStandardFetcher,
   targets,
 } from "@p-stream/providers";
-import { stealthFetch } from "@/lib/ultra-play-button";
+import { proxiedFetch } from "./proxyFetcher";
 export interface MovieMedia {
   type: "movie";
   tmdbId: string;
@@ -32,9 +34,45 @@ export interface ShowMedia {
   };
 }
 
+const proxiedFetcher = async (
+  input: RequestInfo | URL,
+  ops?: DefaultedFetcherOptions
+): Promise<FetcherResponse> => {
+  // Convert ops to RequestInit – key fix for body
+  const init: RequestInit = {};
+  if (ops) {
+    // Copy all props except body
+    Object.assign(init, { ...ops, body: undefined });
+
+    // Handle body conversion
+    if (ops.body !== undefined) {
+      if (
+        typeof ops.body === "object" &&
+        !(ops.body instanceof FormData) &&
+        ops.body !== null
+      ) {
+        // Record<string, any> → URLSearchParams (assumes key-value pairs)
+        init.body = new URLSearchParams(ops.body as Record<string, string>);
+      } else {
+        // String, FormData, etc. – pass as-is
+        init.body = ops.body as BodyInit | null;
+      }
+    }
+  }
+
+  const response = await proxiedFetch(input, init);
+  return {
+    body: response.body,
+    statusCode: response.status,
+    finalUrl: response.url,
+    headers: response.headers, // Native Headers
+  };
+};
+
 const providers = makeProviders({
-  fetcher: makeStandardFetcher(stealthFetch),
+  fetcher: makeStandardFetcher(fetch),
   target: targets.NATIVE,
+  proxiedFetcher,
 });
 
 export async function GET(req: Request) {

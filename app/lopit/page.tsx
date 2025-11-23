@@ -34,7 +34,7 @@ export default function HlsPlayerTest() {
     setStreamUrl(null);
 
     try {
-      let url = `https://puny-dragons-happen.loca.lt/api/get?id=${movieId}&media_type=${mediaType}`;
+      let url = `https://afraid-impalas-taste.loca.lt/api/get?id=${movieId}&media_type=${mediaType}`;
       if (mediaType === "tv") {
         url += `&season=${season}&episode=${episode}`;
       }

@@ -1,12 +1,9 @@
 import { NextResponse } from "next/server";
-import type { DefaultedFetcherOptions } from "@p-stream/providers";
 import {
-  FetcherResponse,
   makeProviders,
   makeStandardFetcher,
   targets,
 } from "@p-stream/providers";
-import { proxiedFetch } from "./proxyFetcher";
 export interface MovieMedia {
   type: "movie";
   tmdbId: string;
@@ -34,45 +31,30 @@ export interface ShowMedia {
   };
 }
 
-const proxiedFetcher = async (
-  input: RequestInfo | URL,
-  ops?: DefaultedFetcherOptions
-): Promise<FetcherResponse> => {
-  // Convert ops to RequestInit – key fix for body
-  const init: RequestInit = {};
-  if (ops) {
-    // Copy all props except body
-    Object.assign(init, { ...ops, body: undefined });
-
-    // Handle body conversion
-    if (ops.body !== undefined) {
-      if (
-        typeof ops.body === "object" &&
-        !(ops.body instanceof FormData) &&
-        ops.body !== null
-      ) {
-        // Record<string, any> → URLSearchParams (assumes key-value pairs)
-        init.body = new URLSearchParams(ops.body as Record<string, string>);
-      } else {
-        // String, FormData, etc. – pass as-is
-        init.body = ops.body as BodyInit | null;
-      }
-    }
-  }
-
-  const response = await proxiedFetch(input, init);
-  return {
-    body: response.body,
-    statusCode: response.status,
-    finalUrl: response.url,
-    headers: response.headers, // Native Headers
-  };
+const customFetch: typeof fetch = (input, init) => {
+  return fetch(input, {
+    ...init,
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+      Accept:
+        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+      "Accept-Language": "en-US,en;q=0.9",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      Connection: "keep-alive",
+      "Upgrade-Insecure-Requests": "1",
+      "Sec-Fetch-Dest": "document",
+      "Sec-Fetch-Mode": "navigate",
+      "Sec-Fetch-Site": "none",
+      ...((init?.headers as Record<string, string>) || {}),
+    },
+    signal: init?.signal ?? AbortSignal.timeout?.(30_000), // 30s timeout (Node 18+)
+  });
 };
 
 const providers = makeProviders({
-  fetcher: makeStandardFetcher(fetch),
+  fetcher: makeStandardFetcher(customFetch), // Only 1 argument!
   target: targets.NATIVE,
-  proxiedFetcher,
 });
 
 export async function GET(req: Request) {
@@ -110,7 +92,7 @@ export async function GET(req: Request) {
     } catch (error) {
       return NextResponse.json({
         success: false,
-        streams: null,
+        streams: [],
         message: "404 not found.",
       });
     }
@@ -144,8 +126,8 @@ export async function GET(req: Request) {
   } catch (error) {
     return NextResponse.json({
       success: false,
-      streams: null,
-      message: "404 not found.",
+      streams: [],
+      message: "404 not found. Try switching server.",
     });
   }
 }

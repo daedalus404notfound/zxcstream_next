@@ -86,3 +86,5 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+// gagana pag hindi naka encodeUri

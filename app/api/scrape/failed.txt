@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import {
-  makeProviders,
+  buildProviders,
   makeStandardFetcher,
   targets,
+  type MovieScrapeContext,
+  type ShowScrapeContext,
+  NotFoundError,
 } from "@p-stream/providers";
+import * as cheerio from "cheerio"; // npm install cheerio @types/cheerio
+
 export interface MovieMedia {
   type: "movie";
   tmdbId: string;
@@ -14,17 +19,14 @@ export interface MovieMedia {
 export interface ShowMedia {
   type: "show";
   tmdbId: string;
-
   title: string;
   releaseYear: number;
-
   season: {
     number: number;
     tmdbId: string;
     title: string;
     episodeCount?: number;
   };
-
   episode: {
     number: number;
     tmdbId: string;
@@ -38,8 +40,6 @@ const customFetch: typeof fetch = (input, init) => {
       // Mobile Chrome on Android (Pixel 9, Android 15, Chrome 131)
       "User-Agent":
         "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36",
-
-      // Common mobile headers
       Accept:
         "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
       "Accept-Language": "en-US,en;q=0.9",
@@ -49,27 +49,90 @@ const customFetch: typeof fetch = (input, init) => {
       "Sec-Fetch-Site": "none",
       "Sec-Fetch-User": "?1",
       "Upgrade-Insecure-Requests": "1",
-
-      // Optional: fake viewport (some sites check this via JS, but good for realism)
       "Viewport-Width": "412",
-      DPR: "2.625", // Pixel 9 has ~420dpi → ~2.6x
-
-      // Override any headers passed in init
+      DPR: "2.625",
       ...((init?.headers as Record<string, string>) || {}),
     },
     signal: init?.signal ?? AbortSignal.timeout?.(30_000),
   });
 };
 
-const providers = makeProviders({
-  fetcher: makeStandardFetcher(customFetch), // Only 1 argument!
-  target: targets.NATIVE,
-});
+// Combo scraper function (handles both movie & show – docs-recommended)
+async function vidoraComboScraper(
+  ctx: MovieScrapeContext | ShowScrapeContext
+): Promise<{ embeds: { embedId: string; url: string }[] }> {
+  const baseUrl = "https://watch.vidora.su";
+  let detailUrl: string;
+
+  if (ctx.media.type === "movie") {
+    detailUrl = `${baseUrl}/details/movie/${ctx.media.tmdbId}`;
+  } else {
+    // Try direct embed for shows (test & adjust path if needed, e.g., /watch/tv/... )
+    detailUrl = `${baseUrl}/embed/tv/${ctx.media.tmdbId}/${ctx.media.season.number}/${ctx.media.episode.number}`;
+    // Fallback to detail page: detailUrl = `${baseUrl}/details/tv/${ctx.media.tmdbId}`;
+  }
+
+  const html = await ctx.proxiedFetcher<string>(detailUrl, {
+    headers: {
+      Referer: baseUrl,
+    },
+  });
+
+  const $ = cheerio.load(html);
+  // Adjust selector based on site inspection (e.g., iframe src for player)
+  let embedUrl =
+    $("#player iframe").attr("src") ||
+    $(".embed-responsive iframe").attr("src") ||
+    $(".video-player iframe").attr("src");
+  if (!embedUrl) {
+    throw new NotFoundError("No stream embed found on Vidora");
+  }
+
+  // Resolve relative URLs
+  const fullEmbedUrl = embedUrl.startsWith("http")
+    ? embedUrl
+    : new URL(embedUrl, baseUrl).href;
+
+  ctx.progress(50); // Optional: Update progress (0-100)
+
+  const embeds = [
+    {
+      embedId: "vidora-player", // Unique ID for this embed
+      url: fullEmbedUrl,
+    },
+  ];
+
+  ctx.progress(100);
+
+  return { embeds };
+}
+
+// Manually construct the Vidora source (exact Sourcerer shape per docs)
+const vidoraSource = {
+  type: "source",
+  id: "vidora-su",
+  name: "Vidora SU",
+  rank: 800, // Unique priority (higher = preferred; avoid conflicts with built-ins)
+  disabled: false,
+  externalSource: false,
+  flags: [], // Empty array - suppress type error if needed with @ts-ignore
+  mediaTypes: ["movie", "show"], // Optional but good for filtering
+  scrapeMovie: vidoraComboScraper,
+  scrapeShow: vidoraComboScraper,
+};
+
+// Build providers with custom source
+const providers = buildProviders()
+  .setFetcher(makeStandardFetcher(customFetch))
+  .setTarget(targets.NATIVE)
+  // @ts-ignore - Suppress type mismatch for flags
+  .addSource(vidoraSource)
+  .build();
 
 export async function GET(req: Request) {
   console.log(
     "providers",
-    providers.listSources().filter((s) => s.mediaTypes?.includes("show"))
+    providers.listSources().filter((s: any) => s.mediaTypes?.includes("show"))
   );
 
   const url = new URL(req.url);
@@ -141,4 +204,4 @@ export async function GET(req: Request) {
   }
 }
 
-// http://localhost:3000/api/zxc?title=Arcane&releaseYear=2021&tmdbId=94605&media_type=show&seasonTitle=Season+1&season=1&episode=1&episodeCount=9
+// Test: http://localhost:3000/api/scrape?title=Arcane&releaseYear=2021&tmdbId=94605&media_type=show&seasonTitle=Season+1&season=1&episode=1&episodeCount=9

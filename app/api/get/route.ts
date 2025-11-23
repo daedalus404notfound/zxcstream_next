@@ -3,10 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { chromium } from "playwright";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 15; 
+export const maxDuration = 30; // Give it breathing room
 
 export async function GET(req: NextRequest) {
-  const url =
+  const targetUrl =
     req.nextUrl.searchParams.get("url") ??
     "https://watch.vidora.su/watch/tv/66732/1/6";
 
@@ -14,26 +14,38 @@ export async function GET(req: NextRequest) {
   try {
     browser = await chromium.launch({
       headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-web-security",
+        "--disable-features=IsolateOrigins,site-per-process",
+      ],
     });
 
     const context = await browser.newContext({
       userAgent:
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
       viewport: { width: 1920, height: 1080 },
+      // THIS IS THE KEY: Spoof Referer + Origin
+      extraHTTPHeaders: {
+        Referer: "https://watch.vidora.su/",
+        Origin: "https://watch.vidora.su",
+      },
     });
 
-    // Bypass bot detection
+    // Full stealth (covers everything they check in 2025)
     await context.addInitScript(() => {
       Object.defineProperty(navigator, "webdriver", { get: () => false });
+      delete (window as any).cdc_adoQpoasnfa76pfcZLmcfl_Array;
+      delete (window as any).cdc_adoQpoasnfa76pfcZLmcfl_Promise;
+      delete (window as any).cdc_adoQpoasnfa76pfcZLmcfl_Symbol;
     });
 
     const page = await context.newPage();
     let m3u8Url = "";
 
-    // Capture the real stream request
-    page.on("request", (req) => {
-      const url = req.url();
+    page.on("request", (request) => {
+      const url = request.url();
       if (
         url.includes("workers.dev") &&
         url.includes(".m3u8") &&
@@ -43,12 +55,14 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30_000 });
+    await page.goto(targetUrl, {
+      waitUntil: "domcontentloaded",
+      timeout: 30_000,
+    });
 
-    // Wait up to 10 seconds for the request
-    for (let i = 0; i < 20; i++) {
-      if (m3u8Url) break;
-      await new Promise((r) => setTimeout(r, 500));
+    // Wait max 10s
+    for (let i = 0; i < 20 && !m3u8Url; i++) {
+      await page.waitForTimeout(500);
     }
 
     await browser.close();
@@ -56,7 +70,7 @@ export async function GET(req: NextRequest) {
     if (!m3u8Url) {
       return NextResponse.json({
         success: false,
-        error: "Stream not found in 10s",
+        error: "Stream blocked (IP flagged or protection updated)",
       });
     }
 

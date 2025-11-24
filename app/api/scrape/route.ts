@@ -472,7 +472,7 @@ export async function GET(req: Request) {
     };
     try {
       const streams = await providers.runAll({ media });
-      return NextResponse.json({ success: true, streams });
+      return withCors({ success: true, streams });
     } catch (error) {
       return NextResponse.json({
         success: false,
@@ -506,7 +506,7 @@ export async function GET(req: Request) {
 
   try {
     const streams = await providers.runAll({ media });
-    return NextResponse.json({ success: true, streams });
+    return withCors({ success: true, streams });
   } catch (error) {
     return NextResponse.json({
       success: false,
@@ -514,4 +514,27 @@ export async function GET(req: Request) {
       message: "404 not found. Try switching server.",
     });
   }
+}
+function withCors(json: any, status = 200) {
+  return new NextResponse(JSON.stringify(json), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*", // or "http://localhost:3000"
+      "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    },
+  });
+}
+
+/* ⬇️ ADD THIS — REQUIRED FOR CORS */
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    },
+  });
 }

@@ -72,7 +72,7 @@ export default function useLocalFetch({
 
       try {
         const { data } = await axios.get(
-          "https://tame-ties-drum.loca.lt/api/scrape",
+          "https://warm-singers-arrive.loca.lt/api/scrape",
           { params }
         );
 

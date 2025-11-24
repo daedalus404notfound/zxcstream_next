@@ -72,7 +72,7 @@ export default function useLocalFetch({
 
       try {
         const { data } = await axios.get(
-          "https://chilly-parks-scream.loca.lt/api/scrape",
+          "https://seven-lies-joke.loca.lt/api/scrape",
           { params }
         );
 

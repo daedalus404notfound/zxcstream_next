@@ -75,6 +75,8 @@
 //     });
 //   }
 // }
+
+//api/get/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { chromium } from "playwright";
 
@@ -102,8 +104,8 @@ export async function GET(req: NextRequest) {
   // Construct URL based on type
   const url =
     media_type === "movie"
-      ? `https://watch.vidora.su/watch/movie/${id}`
-      : `https://watch.vidora.su/watch/tv/${id}/${season}/${episode}`;
+      ? `https://111movies.com/movie/${id}`
+      : `https://111movies.com/tv/${id}/${season}/${episode}`;
 
   let browser;
   try {
@@ -141,7 +143,7 @@ export async function GET(req: NextRequest) {
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30_000 });
 
     // Wait up to 10 seconds for the request
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 10; i++) {
       if (m3u8Url) break;
       await new Promise((r) => setTimeout(r, 500));
     }

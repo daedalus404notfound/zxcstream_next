@@ -6,9 +6,9 @@ import Hls from "hls.js";
 interface StreamResponse {
   success: boolean;
   realStreamUrl?: string;
-  playInVLC?: string;
   download?: string;
   error?: string;
+  otherM3u8: string;
 }
 
 export default function HlsPlayerTest() {
@@ -34,7 +34,7 @@ export default function HlsPlayerTest() {
     setStreamUrl(null);
 
     try {
-      let url = `https://afraid-impalas-taste.loca.lt/api/get?id=${movieId}&media_type=${mediaType}`;
+      let url = `/api/get?id=${movieId}&media_type=${mediaType}`;
       if (mediaType === "tv") {
         url += `&season=${season}&episode=${episode}`;
       }
@@ -58,24 +58,72 @@ export default function HlsPlayerTest() {
     if (!streamUrl || !videoRef.current) return;
 
     const video = videoRef.current;
+    let hls: Hls;
 
-    if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      video.src = streamUrl;
-    } else if (Hls.isSupported()) {
-      const hls = new Hls();
+    if (Hls.isSupported()) {
+      hls = new Hls({
+        maxBufferLength: 30,
+        maxMaxBufferLength: 60,
+      });
+
       hls.loadSource(streamUrl);
       hls.attachMedia(video);
-      hls.on(Hls.Events.ERROR, (event, data) => {
-        console.error("HLS error:", data);
-        setError(`HLS error: ${data.type}`);
-      });
-      return () => {
-        hls.destroy();
+
+      let isRecovering = false;
+
+      const recover = async () => {
+        if (isRecovering) return;
+        isRecovering = true;
+
+        const currentTime = video.currentTime;
+
+        try {
+          // Re-use your existing API but call it silently
+          const res = await fetch(
+            `/api/get?id=${movieId}&media_type=${mediaType}` +
+              (mediaType === "tv" ? `&season=${season}&episode=${episode}` : "")
+          );
+          const json: StreamResponse = await res.json();
+
+          if (json.success && json.realStreamUrl) {
+            console.log("Hot-swapping expired m3u8 → fresh one");
+
+            // THIS IS THE MAGIC LINE
+            hls.loadSource(json.realStreamUrl);
+
+            // Manifest will reload instantly
+            hls.once(Hls.Events.MANIFEST_LOADED, () => {
+              // Resume ~8 seconds back to avoid gap
+              video.currentTime = Math.max(currentTime - 8, 0);
+              video.play();
+            });
+          }
+        } catch (err) {
+          console.error("Recovery failed", err);
+        } finally {
+          isRecovering = false;
+        }
       };
-    } else {
-      setError("HLS not supported in this browser");
+
+      // Auto-recover on fatal error OR long stall
+      hls.on(Hls.Events.ERROR, (event, data) => {
+        if (data.fatal || data.type === "networkError") {
+          recover();
+        }
+      });
+
+      // If stuck buffering >12s → token probably died
+      let stallTimer: NodeJS.Timeout;
+      video.addEventListener("waiting", () => {
+        stallTimer = setTimeout(recover, 12000);
+      });
+      video.addEventListener("playing", () => clearTimeout(stallTimer));
     }
-  }, [streamUrl]);
+
+    return () => {
+      hls?.destroy();
+    };
+  }, [streamUrl, movieId, mediaType, season, episode]);
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 flex flex-col justify-center items-center p-4">

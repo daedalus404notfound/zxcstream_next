@@ -71,7 +71,10 @@ export default function useLocalFetch({
       }
 
       try {
-        const { data } = await axios.get("/api/scrape", { params });
+        const { data } = await axios.get(
+          "https://chilly-parks-scream.loca.lt/api/scrape",
+          { params }
+        );
 
         if (!data.success) return null;
         return data.streams as Streams | null;
